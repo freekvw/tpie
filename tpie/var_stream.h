@@ -127,22 +127,22 @@ public:
 
  	inline const item_type &read() {
     memory_size_type headerSize = sizeof(size_extractor_type::header_t);
-    size_extractor_type::header_t &header = reinterpret_cast<size_extractor_type::header_t &>m_allocator.allocate(headerSize);
-    m_byteStream->read(reinterpret_cast<char *>(&header), reinterpret_cast<char *>(&header + 1));
+    typename size_extractor_type::header_t &header = reinterpret_cast<typename size_extractor_type::header_t &>(m_allocator.allocate(headerSize));
+    m_byteStream.read(reinterpret_cast<char *>(&header), reinterpret_cast<char *>(&header + 1));
     memory_size_type size = m_size_extractor.size(header);
     T &item = m_allocator.allocate(size);
-    m_byteStream->read(reinterpret_cast<char *>(&item) + headerSize, reinterpret_cast<char *>(&item) + size);
+    m_byteStream.read(reinterpret_cast<char *>(&item) + headerSize, reinterpret_cast<char *>(&item) + size);
     return item;
 	}
 
  	inline void write(const item_type& item) throw(stream_exception) {
-    m_byteStream->write(reinterpret_cast<char *>)(&item),
-                        reinterpret_cast<char *>)(&item) + m_size_extractor.size(reinterpret_cast<size_extractor_type::header_t &>item));
+    m_byteStream.write(reinterpret_cast<char *>(&item),
+                       reinterpret_cast<char *>(&item) + m_size_extractor.size(reinterpret_cast<typename size_extractor_type::header_t &>(item)));
 	}
 
   template<typename IT>
- 	inline void byte_write(const IT & start, const IT & end) throw(stream_exception) {
-    m_byteStream->write(begin, end);
+ 	inline void byte_write(const IT & begin, const IT & end) throw(stream_exception) {
+    m_byteStream.write(begin, end);
 	}
   
   inline allocator_type &allocator() {
