@@ -25,6 +25,7 @@
 /// Get definitions for working with Unix and Windows
 #include <tpie/portability.h>
 #include <tpie/tpie_log.h>
+#include <tpie/mm_base.h>
 
 #define MM_MANAGER_VERSION 2
 

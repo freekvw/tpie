@@ -20,6 +20,7 @@
 #define _TPIE_STREAMING_CONCEPTS_H
 #include <tpie/util.h>
 #include <tpie/concepts.h>
+#include <tpie/streaming/memory.h>
 
 namespace tpie {
 namespace streaming {
