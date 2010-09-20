@@ -65,7 +65,7 @@ private:
 template<typename T>
 class fixed_allocator {
 public:
-	fixed_allocator(memory_size_type size = sizeof(T))
+	fixed_allocator(memory_size_type size)
 		: m_data(new char[size]), m_size(size) {
 	}
 
