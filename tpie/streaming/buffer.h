@@ -134,9 +134,10 @@ public:
 	
 	const item_type & pull() {
 		if (backwards)
-			return m_source->can_pull() ? m_source->pull() : m_buff[m_index--];
-		else
-			return (m_index < m_buffIndex) ? m_buff[m_index++] : m_source->pull();
+			return m_source->can_pull() ? m_source->pull(): (const item_type &)m_buff[m_index--];
+		else {
+			return (m_index < m_buffIndex) ? (const item_type &)m_buff[m_index++] : m_source->pull();
+		}
 	}
 
 	bool can_pull() {
