@@ -52,7 +52,7 @@ class sort_base: public sort_base_crtp<item_t,
 protected:
 	item_t * buffer;
 	memory_size_type bufferSize;
-	memory_size_type bufferIndex;
+	memory_size_type bufferItems;
 	stream_size_type size;
 	typedef sort_base_crtp<item_t, 
 						   comp_t, 
@@ -74,23 +74,23 @@ public:
 		//TODO ensure that mem is less then "consecutive_memory_available"
 		bufferSize = std::min( stream_size_type(mem / sizeof(item_t)), items );
 		buffer = new item_t[bufferSize];
-		bufferIndex=0;
+		bufferItems=0;
 		size=0;
 	}
 
 	inline void sortRun() {
-		std::sort(buffer, buffer+bufferIndex, m_comp);
+		std::sort(buffer, buffer+bufferItems, m_comp);
 	}
 
 	void flush() {
 		sortRun();
 		file_stream<item_t> stream(m_blockFactor);
 		stream.open(name(nextFile));
-		item_t * end=buffer+bufferIndex;
+		item_t * end=buffer+bufferItems;
 		for (item_t * item=buffer; item != end; ++item)
 			stream.write(*item);
-		size += bufferIndex;
-		bufferIndex = 0;
+		size += bufferItems;
+		bufferItems = 0;
 		++nextFile;
 	}
 
@@ -101,8 +101,8 @@ public:
 	}
 	
 	inline void push(const item_t & item) {
-		if (bufferIndex >= bufferSize) flush();
-		buffer[bufferIndex++] = item;
+		if (bufferItems >= bufferSize) flush();
+		buffer[bufferItems++] = item;
 	}
 };
 
@@ -132,7 +132,7 @@ public:
 	pull_sort(comp_t comp=comp_t(), double blockFactor=1.0): parent_t(comp, blockFactor) {};
 
 	void reset_buffer_pointer() {curItem = 0;}
-	bool has_next_buffer_item() {return curItem != parent_t::bufferIndex;}
+	bool has_next_buffer_item() {return curItem != parent_t::bufferItems;}
 	item_t & next_buffer_item() {return parent_t::buffer[curItem++];}
 
 	inline memory_size_type mergeArity() {
@@ -160,7 +160,7 @@ public:
 	}
 
 	inline void pushBuffer() {
-		typename dest_t::item_type * end = parent_t::buffer+ parent_t::bufferIndex;
+		typename dest_t::item_type * end = parent_t::buffer+ parent_t::bufferItems;
 		for (typename dest_t::item_type * item=parent_t::buffer; item != end; ++item)
 			parent_t::m_dest.push(*item);
 	}

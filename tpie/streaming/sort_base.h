@@ -196,7 +196,7 @@ public:
 			merger = new typename parent_t::Merger(parent_t::fileBase, parent_t::m_comp, parent_t::m_blockFactor,
 												   parent_t::firstFile, parent_t::nextFile);
 		} else {
-			if (items) *items=parent_t::bufferIndex;
+			if (items) *items=parent_t::bufferItems;
 			reinterpret_cast<child_t*>(this)->reset_buffer_pointer();
 		}
 	}
@@ -241,7 +241,7 @@ public:
 	void end(end_data_type * endData=0) {
 		if (parent_t::nextFile == 0) {
 			parent_t::sortRun();
-			m_dest.begin(parent_t::bufferIndex, parent_t::beginData);
+			m_dest.begin(parent_t::bufferItems, parent_t::beginData);
 			reinterpret_cast<child_t*>(this)->pushBuffer();
 			delete[] parent_t::buffer;
 			parent_t::buffer = 0;
