@@ -20,6 +20,7 @@
 
 #include <tpie/portability.h>
 #include <tpie/var_file.h>
+#include <tpie/var_file_stream.h>
 
 int test[] = {
 	2, 	3, 	5, 	7,   11,   13,   17,   19,   23,   29,
@@ -104,15 +105,13 @@ int main(void) {
 	}
 
 	{
-		varfile f(se, alloc, blockFactor);
-		varfile::stream s(f);
+		tpie::var_file_stream<item_type, int_size_extractor_t> fs(se, alloc, blockFactor);
 
-		// Test byte_write and byte_read
+		// Test byte_write and byte_read and var_file_stream
 		int multiplier = 3;
 		std::cout << "Writing." << std::endl;
 		remove("/tmp/stream");
-		f.open("/tmp/stream");
-		s.byte_seek(0);
+		fs.open("/tmp/stream");
 		for (memory_size_type i = 0; test[i]; i += multiplier) {
 			int byteSum = 0;
 			int nItems = 0;
@@ -129,22 +128,24 @@ int main(void) {
 				}
 				dp += sizeof(int)+sizeof(short)*test[j];
 			}
-			s.byte_write(data, dp, nItems);
+			fs.byte_write(data, dp, nItems);
 		}
-		f.close();
-		std::cout << "Reading " << s.size() << " elements." << std::endl;
-		f.open("/tmp/stream");
-		s.byte_seek(0);
+		fs.close();
+	}
+	{
+		tpie::var_file_stream<item_type, int_size_extractor_t> fs(se, alloc, blockFactor);
+		fs.open("/tmp/stream");
+		std::cout << "Reading " << fs.size() << " elements." << std::endl;
 		memory_size_type i = 0;
-		while (s.can_read()) {
-			const item_type &item = s.read();
+		while (fs.can_read()) {
+			const item_type &item = fs.read();
 			assert(item.count == test[i]);
 			for (int j = 0; j < test[i]; ++j) {
 				assert(item.data[j] == test[i]);
 			}
 			++i;
 		}
-		f.close();
+		fs.close();
 	}
 }
 
