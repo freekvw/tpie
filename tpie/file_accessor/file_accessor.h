@@ -16,8 +16,8 @@
 // 
 // You should have received a copy of the GNU Lesser General Public License
 // along with TPIE.  If not, see <http://www.gnu.org/licenses/>
-#ifndef __tpie_file_accessor_file_accossor_h__
-#define __tpie_file_accessor_file_accossor_h__
+#ifndef __tpie_file_accessor_file_accessor_h__
+#define __tpie_file_accessor_file_accessor_h__
 #include <tpie/types.h>
 #include <tpie/stream_header.h>
 
@@ -52,4 +52,4 @@ public:
 
 }
 }
-#endif //__tpie_file_accessor_file_accossor_h__
+#endif //__tpie_file_accessor_file_accessor_h__

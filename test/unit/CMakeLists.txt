@@ -16,8 +16,11 @@ macro(add_fulltest NAME)
   endforeach(TEST)
 endmacro(add_fulltest)
 
+
 add_unittest(hashmap chaining linear_probing iterators memory)
 add_unittest(internal_queue basic memory)
+
+add_unittest(var_file basic)
 
 add_unittest(external_priority_queue basic)
 add_fulltest(external_priority_queue medium large large_cycle)

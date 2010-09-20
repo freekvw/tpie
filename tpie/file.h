@@ -149,10 +149,19 @@ public:
 	/////////////////////////////////////////////////////////////////////////
 	/// \brief Calculate the size of the file in items.
 	///
-	/// \returns The number of items is the file
+	/// \returns The number of items in the file
 	/////////////////////////////////////////////////////////////////////////
 	inline stream_size_type size() const throw() {
 		return m_size;
+	}
+
+	/////////////////////////////////////////////////////////////////////////
+	/// \brief Check whether the file is open.
+	///
+	/// \returns True if the file is open, otherwise false.
+	/////////////////////////////////////////////////////////////////////////
+	inline bool is_open() const throw() {
+		return m_open;
 	}
 
 	/////////////////////////////////////////////////////////////////////////
@@ -247,7 +256,7 @@ public:
 		/// \endcode
 		/// But it might be faster
 		///
-		/// \returns Wether or not we can read more items
+		/// \returns Whether or not we can read more items
 		/////////////////////////////////////////////////////////////////////////
  		inline bool can_read() const throw() {
 			assert(m_file.m_open);
@@ -258,7 +267,7 @@ public:
 		/////////////////////////////////////////////////////////////////////////
 		/// \brief Check if we can read an item with read_back()
 		///
-		/// \returns Wether or not we can an item with read_back()
+		/// \returns Whether or not we can an item with read_back()
 		/////////////////////////////////////////////////////////////////////////
 		inline bool can_read_back() const throw() {
 			assert(m_file.m_open);
@@ -301,7 +310,7 @@ protected:
 
 	memory_size_type m_itemSize;
 private:
-	//TODO this should realy be a hash map
+	//TODO this should really be a hash map
 	block_t * m_firstUsed;
 	block_t* m_firstFree;
 	file_accessor::file_accessor * m_fileAccessor;
@@ -339,7 +348,7 @@ public:
 
 
 		/////////////////////////////////////////////////////////////////////////
-		/// \brief Read an mutable item from the stream.
+		/// \brief Read a mutable item from the stream.
 		///
 		/// Read current item from the stream, and increment the offset
 		/// by one item.
@@ -422,6 +431,7 @@ public:
 		template <typename IT>
 		inline void write(const IT & start, const IT & end) {
 			assert(m_file.m_open);
+			// FIXME implement more efficiently
 			for (IT i=start; i != end; ++i)
 				write(*i);
 		}
