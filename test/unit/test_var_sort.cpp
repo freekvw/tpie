@@ -45,60 +45,71 @@ struct size_t_size_extractor_t {
 };
 
 struct string_sink: public memory_single {
-  typedef item_t item_type;
-  typedef empty_type begin_data_type;
-  typedef empty_type end_data_type;
-  void begin(stream_size_type size=0, empty_type * e=0) {unused(size); unused(e);}
-  void push(const item_t & item) {
-    std::cout << item.str << std::endl;
-  }
-  void end(empty_type * e = 0) {unused(e);}
+	typedef item_t item_type;
+	typedef empty_type begin_data_type;
+	typedef empty_type end_data_type;
+	
+	std::vector<std::string> items;
+	void begin(stream_size_type size=0, empty_type * e=0) {unused(size); unused(e);}
+	void push(const item_t & item) {items.push_back(item.str);}
+	void end(empty_type * e = 0) {unused(e);}
 };
 
-int main() {
-  const char * strings[] = {
-    "William Kahan",
-    "Robert E. Kahn",
-    "Avinash Kak",
-    "Alan Kay",
-    "Richard Karp",
-    "Narendra Karmarkar",
-    "Marek Karpinski",
-    "John George Kemeny",
-    "Ken Kennedy",
-    "Brian Kernighan",
-    "Carl Kesselman",
-    "Gregor Kiczales",
-    "Stephen Cole Kleene",
-    "Leonard Kleinrock",
-    "Donald Knuth",
-    "Andrew Koenig",
-    "Michael Kölling",
-    "Janet L. Kolodner",
-    "David Korn",
-    "Kees Koster",
-    "John Koza",
-    "Andrey Nikolaevich Kolmogorov",
-    "Robert Kowalski",
-    "John Krogstie",
-    "Joseph Kruskal",
-    "Thomas E. Kurtz", 0};
+bool basic_test() {
+	const char * strings[] = {
+		"William Kahan",
+		"Robert E. Kahn",
+		"Avinash Kak",
+		"Alan Kay",
+		"Richard Karp",
+		"Narendra Karmarkar",
+		"Marek Karpinski",
+		"John George Kemeny",
+		"Ken Kennedy",
+		"Brian Kernighan",
+		"Carl Kesselman",
+		"Gregor Kiczales",
+		"Stephen Cole Kleene",
+		"Leonard Kleinrock",
+		"Donald Knuth",
+		"Andrew Koenig",
+		"Michael Kölling",
+		"Janet L. Kolodner",
+		"David Korn",
+		"Kees Koster",
+		"John Koza",
+		"Andrey Nikolaevich Kolmogorov",
+		"Robert Kowalski",
+		"John Krogstie",
+		"Joseph Kruskal",
+		"Thomas E. Kurtz", 0};
 
-  string_sink sink;
-  var_sort<string_sink, size_t_size_extractor_t, comp_t> sorter(sink);
+	string_sink sink;
+	var_sort<string_sink, size_t_size_extractor_t, comp_t> sorter(sink);
   
-  item_t * item = (item_t*)new char[1024*1024];
-
-  sorter.set_memory_in(sorter.minimum_memory_in()+sizeof(int)*3);
-  sorter.set_memory_out(sorter.minimum_memory_out()+sizeof(int)*3);
+	item_t * item = (item_t*)new char[1024*1024];
+	std::vector<std::string> items;
+	sorter.set_memory_in(sorter.minimum_memory_in()+2024*1024);
+	sorter.set_memory_out(sorter.minimum_memory_out()+sizeof(int)*3);
 		
-  sorter.begin();
-  for(size_t i=0; strings[i]; ++i) {
-    strcpy(item->str, strings[i]);
-    item->size = strlen(strings[i])+1;
-    
-    sorter.push(*item);
-  }
-  sorter.end();
+	sorter.begin();
+	for(size_t i=0; strings[i]; ++i) {
+		strcpy(item->str, strings[i]);
+		item->size = strlen(strings[i])+1;
+		items.push_back(strings[i]);
+		sorter.push(*item);
+	}
+	sorter.end();
+	sort(items.begin(), items.end());
+	if (items != sink.items) {
+		std::cout << "Invalid output" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+int main() {
+	if (basic_test()) exit(EXIT_SUCCESS);
+	exit(EXIT_FAILURE);
 }
 
