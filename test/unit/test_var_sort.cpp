@@ -44,7 +44,7 @@ struct size_t_size_extractor_t {
   };
 };
 
-struct string_sink {
+struct string_sink: public memory_single {
   typedef item_t item_type;
   typedef empty_type begin_data_type;
   typedef empty_type end_data_type;

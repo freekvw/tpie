@@ -92,6 +92,7 @@ private:
 	double priorityOut;
 	double allocatedMemoryIn;
 	double allocatedMemoryOut;
+	memory_split(const memory_split &);
 public:
 	memory_split();
 	double memory_in_priority();

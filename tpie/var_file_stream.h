@@ -236,6 +236,10 @@ public:
 	inline stream_type & get_stream() throw() {
 		return m_stream;
 	}
+
+	inline allocator_type & allocator() {
+		return m_file.allocator();
+	}
 private:
 	file_type m_file;
 	stream_type m_stream;

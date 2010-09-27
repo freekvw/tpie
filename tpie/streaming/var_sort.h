@@ -33,10 +33,13 @@ namespace streaming {
 
 template <typename item_t, typename size_extractor_t>
 struct var_merger_strategy {
-	typedef std::pair<const item_t &, memory_size_type> qi_t;
+	typedef std::pair<const item_t *, memory_size_type> qi_t;
 	fixed_allocator<item_t> item;
+	
+	var_merger_strategy(size_t maxsize): item(maxsize) {}
+
 	inline void store_item(qi_t & p, var_file_stream<item_t, size_extractor_t, fixed_allocator<item_t> > * stream) {
-		std::swap(item, stream.allocator());
+		item.swap(stream->allocator());
 	}
 	inline const item_t & fetch_item() {
 		return item.allocate(0);
@@ -52,6 +55,8 @@ class var_sort_base: public sort_base_crtp<
 	var_file_stream<item_t, size_extractor_t, fixed_allocator<item_t> >,
 	var_sort_base<item_t, comp_t, size_extractor_t, begin_data_t> 
 	> {
+private:
+	var_sort_base(const var_sort_base &);
 protected:
 	char * buffer;
 	memory_size_type bufferSize;
@@ -62,11 +67,15 @@ protected:
 	comp_t comp;
 
 	size_extractor_t m_extract;
-	//Todo i am a comparator and that is quite ugly!!
-	bool operator()(memory_size_type ia, memory_size_type ib) const {
-		const item_t & a = *reinterpret_cast<item_t*>(buffer + ia);
-		const item_t & b = *reinterpret_cast<item_t*>(buffer + ib);
-		return comp(a,b);
+
+	struct index_comp {
+		var_sort_base & vsb;
+		index_comp(var_sort_base & _): vsb(_) {}
+		inline bool operator()(memory_size_type ia, memory_size_type ib) const {
+			const item_t & a = *reinterpret_cast<item_t*>(vsb.buffer + ia);
+			const item_t & b = *reinterpret_cast<item_t*>(vsb.buffer + ib);
+			return vsb.comp(a,b);
+		};
 	};
 
 	inline memory_size_type * index_begin() {
@@ -78,6 +87,8 @@ protected:
 	}
 
 	typedef var_file_stream<item_t, size_extractor_t, fixed_allocator<item_t> > vfs_t;
+	typedef var_merger_strategy<item_t, size_extractor_t> ms_t;
+
 	typedef sort_base_crtp<item_t, 
 						   comp_t, 
 						   var_merger_strategy<item_t, size_extractor_t>,
@@ -105,7 +116,7 @@ public:
 	}
 
 	void sortRun() {
-		std::sort(index_begin(), index_end(), *this);
+		std::sort(index_begin(), index_end(), index_comp(*this));
 	}
 	
 	void flush() {
@@ -134,6 +145,12 @@ public:
 		bufferBytes += itemSize;
 		++bufferItems;
 	}
+
+	inline vfs_t * create_stream() {
+		return new vfs_t(m_extract, m_blockFactor);
+	}
+
+	inline ms_t mergerStrategy() {return ms_t(maximumItemSize);}
 };
 
 

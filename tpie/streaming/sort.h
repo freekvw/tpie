@@ -99,11 +99,17 @@ public:
 		//return memory_fits< pull_stream_source< ami::stream<item_type> > >::fits(MM_manager.memory_available() - baseMinMem());
 		return 2;
 	}
+
+	inline file_stream<item_t> * create_stream() {
+		return new file_stream<item_t>(m_blockFactor);
+	}
 	
 	inline void push(const item_t & item) {
 		if (bufferItems >= bufferSize) flush();
 		buffer[bufferItems++] = item;
 	}
+
+	inline merger_strategy<item_t> mergerStrategy() {return merger_strategy<item_t>();}
 };
 
 

@@ -47,6 +47,7 @@ protected:
 	begin_data_type * beginData;
 	double m_blockFactor;
 private:
+	sort_base_crtp(const sort_base_crtp &);
 	child_t & child() {return *reinterpret_cast<child_t*>(this);}
 public:
 	sort_base_crtp(comp_t comp=comp_t(), double blockFactor=1.0):
@@ -83,8 +84,6 @@ public:
 	
 	class Merger {
 	private:
-		inline child_t & child() {return *reinterpret_cast<child_t*>(this);}
-		
 		//TODO should we use reference for fixed_item_sort??
 		typedef std::pair<const item_t *, memory_size_type> qi_t;	
 		merger_strat_t strat;
@@ -107,21 +106,22 @@ public:
 		std::string fileBase;
 		memory_size_type first;
 		memory_size_type last;
-		
+		child_t & sortBase;  
+									 
 		tpie::array<std::auto_ptr<file_stream_t> > streams;
 		//TODO change to a tpie internal queue of fixed size		
 		std::priority_queue<qi_t, std::vector<qi_t>, qcomp_t> queue;
 		
 		Merger(const std::string & fb,
-					const comp_t & c,
-					double blockFactor,
-					memory_size_type f,
-					memory_size_type l)
-			: comp(c), fileBase(fb), first(f), last(l), queue(comp) {
+			   const comp_t & c,
+			   child_t & sb,  
+			   memory_size_type f,
+			   memory_size_type l
+			): strat(sb.mergerStrategy()), comp(c), fileBase(fb), first(f), last(l), sortBase(sb), queue(comp) {
 			streams.resize(last-first);
 			assert(last-first >= 2);
 			for (memory_size_type i=0; i < last-first; ++i) {
-				streams[i].reset(new file_stream_t(blockFactor));
+				streams[i].reset(sb.create_stream());
 				streams[i]->open(name(i+first));
 				if (streams[i]->can_read()) queue.push(std::make_pair(&streams[i]->read(), i));
 			}
@@ -148,14 +148,15 @@ public:
 		memory_size_type highArity = child().calculateHighArity();
 		while (nextFile - firstFile > arity ) {
 			memory_size_type count = std::min(nextFile - firstFile - arity+1, highArity);
-			file_stream_t stream(m_blockFactor);
-			stream.open(name(nextFile));
+			file_stream_t * stream = child().create_stream();
+			stream->open(name(nextFile));
 			{
-				Merger merger(fileBase, m_comp, m_blockFactor, firstFile, firstFile+count);
-				while (merger.can_pull()) stream.write(merger.pull());
+				Merger merger(fileBase, m_comp, child(), firstFile, firstFile+count);
+				while (merger.can_pull()) stream->write(merger.pull());
 			}
 			firstFile += count;
 			nextFile += 1;
+			delete stream;
 		}
 	}
 };
@@ -167,6 +168,8 @@ private:
 	typename parent_t::Merger * merger;
 	end_data_type * endData;
 	memory_size_type index;
+
+	inline child_t & child() {return *reinterpret_cast<child_t*>(this);}
 public:
 	pull_sort_crtp(typename parent_t::comp_type comp, double blockFactor): parent_t(comp, blockFactor) {}
 
@@ -185,7 +188,7 @@ public:
 		parent_t::flush();
 		delete[] parent_t::buffer;
 		parent_t::buffer=0;
-		memory_size_type arity = reinterpret_cast<child_t*>(this)->mergeArity();
+		memory_size_type arity = child().mergeArity();
 		parent_t::baseMerge(arity);
 	}
 	
@@ -193,24 +196,25 @@ public:
 		unused(data);
 		if (parent_t::nextFile != 0) {
 			if (items) *items=parent_t::size;
-			merger = new typename parent_t::Merger(parent_t::fileBase, parent_t::m_comp, parent_t::m_blockFactor,
-												   parent_t::firstFile, parent_t::nextFile);
+			merger = new typename parent_t::Merger(
+				parent_t::fileBase, parent_t::m_comp, child(), 
+				parent_t::firstFile, parent_t::nextFile);
 		} else {
 			if (items) *items=parent_t::bufferItems;
-			reinterpret_cast<child_t*>(this)->reset_buffer_pointer();
+			child().reset_buffer_pointer();
 		}
 	}
 	
 	inline const typename parent_t::item_type & pull() {
 		if (parent_t::nextFile == 0)
-			return reinterpret_cast<child_t*>(this)->next_buffer_item();
+			return child().next_buffer_item();
 		else
 			return merger->pull();
 	}
 
 	inline bool can_pull() {
 		if (parent_t::nextFile == 0)
-			return reinterpret_cast<child_t*>(this)->has_next_buffer_item();
+			return child().has_next_buffer_item();
 		else
 			return merger->can_pull();
 	}
@@ -228,6 +232,7 @@ template <typename dest_t, typename parent_t, typename child_t>
 class sort_crtp: public parent_t {
 protected:
 	dest_t & m_dest;
+	inline child_t & child() {return *reinterpret_cast<child_t*>(this);}
 public:	
 	sort_crtp(dest_t & d, typename parent_t::comp_type comp, double blockFactor): parent_t(comp, blockFactor), m_dest(d) {}
 	typedef typename dest_t::item_type item_type;
@@ -242,7 +247,7 @@ public:
 		if (parent_t::nextFile == 0) {
 			parent_t::sortRun();
 			m_dest.begin(parent_t::bufferItems, parent_t::beginData);
-			reinterpret_cast<child_t*>(this)->pushBuffer();
+			child().pushBuffer();
 			delete[] parent_t::buffer;
 			parent_t::buffer = 0;
 			m_dest.end(endData);
@@ -251,12 +256,12 @@ public:
 		parent_t::flush();
 		delete[] parent_t::buffer;
 		parent_t::buffer = 0;
-		memory_size_type arity = reinterpret_cast<child_t*>(this)->mergeArity();
+		memory_size_type arity = child().mergeArity();
 		parent_t::baseMerge(arity);
 		m_dest.begin(parent_t::size, parent_t::beginData);
 		{
-			typename parent_t::Merger merger(parent_t::fileBase, parent_t::m_comp, parent_t::m_blockFactor,
-									parent_t::firstFile, parent_t::nextFile);
+			typename parent_t::Merger merger(parent_t::fileBase, parent_t::m_comp, child(),
+											 parent_t::firstFile, parent_t::nextFile);
 			while(merger.can_pull()) m_dest.push(merger.pull());
 		}		
 		m_dest.end(endData);

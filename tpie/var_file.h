@@ -39,7 +39,7 @@ public:
 	inline ~exponential_allocator() {
 		delete [] m_data;
 	}
-
+	
 	T &allocate(memory_size_type size) {
 		if (size > m_size) {
 			char *old_data = m_data;
@@ -78,7 +78,10 @@ public:
 		return *reinterpret_cast<T *>(m_data);
 	}
 
-	friend void std::swap<T>(fixed_allocator<T> &l, fixed_allocator<T> &r);
+	void swap(fixed_allocator<T> & other) {
+		std::swap(m_data, other.m_data);
+		std::swap(m_size, other.m_size);
+	}
 private:
 	char *m_data;
 	memory_size_type m_size;
