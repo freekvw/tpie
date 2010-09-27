@@ -89,14 +89,15 @@ bool basic_test() {
   
 	item_t * item = (item_t*)new char[1024*1024];
 	std::vector<std::string> items;
-	sorter.set_memory_in(sorter.minimum_memory_in()+2024*1024);
-	sorter.set_memory_out(sorter.minimum_memory_out()+sizeof(int)*3);
+	sorter.set_memory_in(sorter.minimum_memory_in()*10);
+	sorter.set_memory_out(sorter.minimum_memory_out()*2);
 		
 	sorter.begin();
-	for(size_t i=0; strings[i]; ++i) {
-		strcpy(item->str, strings[i]);
-		item->size = strlen(strings[i])+1;
-		items.push_back(strings[i]);
+	// for(size_t i=0; strings[i]; ++i) {
+	// 	strcpy(item->str, strings[i]);
+	while(fgets(item->str, 1024*1023, stdin)) {
+		item->size = strlen(item->str)+1;
+		items.push_back(item->str);
 		sorter.push(*item);
 	}
 	sorter.end();

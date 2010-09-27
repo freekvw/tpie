@@ -112,7 +112,14 @@ public:
 		//TODO ensure that mem is less then "consecutive_memory_available"
 		buffer = new char[bufferSize];
 		bufferItems=0;
+		bufferBytes = 0;
+		maximumItemSize=0;
 		size=0;
+	}
+
+	inline memory_size_type bufferMemoryUsage() {return bufferSize + MM_manager.space_overhead();}
+	inline void compressBuffer(memory_size_type target) {
+		return; //TODO implement
 	}
 
 	void sortRun() {
@@ -121,25 +128,32 @@ public:
 	
 	void flush() {
 		sortRun();
+		std::cout << "Flushing " << bufferItems << " items to disk" << std::endl;
 		vfs_t stream(m_extract, fixed_allocator<item_t>(0), m_blockFactor);
+		tpie::remove(name(nextFile));
 		stream.open(name(nextFile));
 		for(memory_size_type * i=index_begin(); i != index_end(); ++i) 
 			stream.write(*reinterpret_cast<item_t*>(buffer+*i));
 		size += bufferItems;
 		bufferItems = 0;
 		bufferBytes = 0;
+		++nextFile;
 	}
 
-	inline memory_size_type calculateHighArity() const {
-		return 2;
+	inline memory_size_type calculateArity(memory_size_type memory) {
+		memory_size_type a = MM_manager.space_overhead() + fixed_allocator<item_t>::memory_usage(maximumItemSize);
+		//We need an extra fixed allocator to allocate the output item	
+		memory -= a;
+		return memory / (a + vfs_t::memory_usage(m_blockFactor) + MM_manager.space_overhead());
 	}
 	
 	inline void push(const item_t & item) {
 		size_extractor_t e;
 		memory_size_type itemSize = e.size(*reinterpret_cast<const typename size_extractor_t::header_t*>(&item));
 		maximumItemSize = std::max(maximumItemSize, itemSize);
-		if ( (bufferItems+1) * sizeof(memory_size_type) + bufferBytes + itemSize > bufferSize)
+		if ( (bufferItems+1) * sizeof(memory_size_type) + bufferBytes + itemSize > bufferSize)  {
 			flush();
+		}
 		*(reinterpret_cast<memory_size_type *>(buffer+bufferSize) - (bufferItems + 1)) = bufferBytes;
 		memcpy(buffer+bufferBytes, reinterpret_cast<const char*>(&item), itemSize);
 		bufferBytes += itemSize;
@@ -170,11 +184,6 @@ private:
 public:
 	typedef typename dest_t::item_type item_type;
 	var_sort(dest_t & dest, comp_t comp=comp_t(), double blockFactor=1.0): parent_t(dest, comp, blockFactor) {}
-
-	inline memory_size_type mergeArity() {
-		return 2;
-		//memory_fits<pull_stream_source< ami::stream<item_type> > >::fits(memoryOut() - baseMinMem());
-	}
 
 	inline void pushBuffer() {
 		for(memory_size_type * i=parent_t::index_begin(); i != parent_t::index_end(); ++i) 

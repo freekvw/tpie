@@ -178,6 +178,7 @@ temp_file::temp_file(const std::string & path): m_path(path), m_persist(false) {
 const std::string & temp_file::path() {
 	if (m_path.empty())
 		m_path = tempname::tpie_name();
+	std::cout << "Temp " << m_path << std::endl;
 	return m_path;
 }
 

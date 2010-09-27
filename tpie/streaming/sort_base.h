@@ -50,13 +50,18 @@ private:
 	sort_base_crtp(const sort_base_crtp &);
 	child_t & child() {return *reinterpret_cast<child_t*>(this);}
 public:
+	typedef file_stream_t file_stream_type;
+
 	sort_base_crtp(comp_t comp=comp_t(), double blockFactor=1.0):
 		m_comp(comp), m_blockFactor(blockFactor) {
 		fileBase = tempname::tpie_name("ssort");
 	}
 	
 	virtual memory_size_type minimum_memory_in() {
-		return base_memory() + file_stream_t::memory_usage() + MM_manager.space_overhead() + 42*sizeof(item_t);
+		return base_memory() + //For our selves
+			file_stream_t::memory_usage() + //To write output
+			2*MM_manager.space_overhead() + //Overhead on buffer and stream allocation
+			file_stream_t::memory_usage();//Questimate one the minimal buffersize needed for resonable performance
 	}
 
 	virtual memory_size_type minimum_memory_out() {
@@ -145,9 +150,12 @@ public:
 	};
 
 	void baseMerge(memory_size_type arity) {
-		memory_size_type highArity = child().calculateHighArity();
+		memory_size_type avail = MM_manager.memory_available();
+		avail -= file_stream_t::memory_usage(m_blockFactor) - MM_manager.space_overhead();
+		memory_size_type highArity = std::min(child().calculateArity(avail), available_files()-1);
 		while (nextFile - firstFile > arity ) {
 			memory_size_type count = std::min(nextFile - firstFile - arity+1, highArity);
+			std::cout << "Internal merge: arity=" << count << std::endl;
 			file_stream_t * stream = child().create_stream();
 			stream->open(name(nextFile));
 			{
@@ -243,21 +251,41 @@ public:
 		return parent_t::base_memory() + sizeof(child_t);
 	}
 
-	void end(end_data_type * endData=0) {
+	void end(end_data_type * endData=0) {	   
 		if (parent_t::nextFile == 0) {
-			parent_t::sortRun();
-			m_dest.begin(parent_t::bufferItems, parent_t::beginData);
-			child().pushBuffer();
-			delete[] parent_t::buffer;
-			parent_t::buffer = 0;
-			m_dest.end(endData);
-			return;
+			if (child().bufferMemoryUsage() >= parent_t::memory_out())
+				child().compressBuffer(parent_t::memory_out());
+
+			if (child().bufferMemoryUsage() <= parent_t::memory_out()) {
+				parent_t::sortRun();
+				m_dest.begin(parent_t::bufferItems, parent_t::beginData);
+				child().pushBuffer();
+				delete[] parent_t::buffer;
+				parent_t::buffer = 0;
+				m_dest.end(endData);
+				return;
+			}
 		}
 		parent_t::flush();
 		delete[] parent_t::buffer;
 		parent_t::buffer = 0;
-		memory_size_type arity = child().mergeArity();
+		
+		if (parent_t::nextFile == 1) {
+			typename parent_t::file_stream_type * stream = child().create_stream();
+			stream->open(parent_t::name(0));
+			std::cout << "Final merge replaced by a scan" << std::endl;
+			m_dest.begin(parent_t::size, parent_t::beginData);
+			while(stream->can_read())
+				m_dest.push(stream->read());
+			m_dest.end(endData);
+			return;
+			
+		}
+		
+		memory_size_type avail = parent_t::memory_out();
+		memory_size_type arity = std::min(child().calculateArity(avail), available_files()-1);
 		parent_t::baseMerge(arity);
+		std::cout << "Final merge: arity=" << std::min(arity, parent_t::nextFile) << std::endl;
 		m_dest.begin(parent_t::size, parent_t::beginData);
 		{
 			typename parent_t::Merger merger(parent_t::fileBase, parent_t::m_comp, child(),

@@ -67,8 +67,11 @@ private:
 };
 
 template<typename T>
-class fixed_allocator {
+class fixed_allocator: public linear_memory_base<fixed_allocator<T> > {
 public:
+	inline static double memory_coefficient() {return 1.0;}
+	inline static double memory_overhead() {return sizeof(fixed_allocator) + MM_manager.space_overhead();}
+	
 	fixed_allocator(memory_size_type size)
 		: m_data(size?new char[size]:0), m_size(size) {
 	}

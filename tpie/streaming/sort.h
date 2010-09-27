@@ -78,11 +78,23 @@ public:
 		size=0;
 	}
 
+	inline memory_size_type bufferMemoryUsage() {return sizeof(item_t)*bufferSize + MM_manager.space_overhead();}
+	inline void compressBuffer(memory_size_type target) {
+		memory_size_type u=sizeof(item_t)*bufferItems + MM_manager.space_overhead();
+		if (u >= target || u >= MM_manager.memory_available()) return;
+		item_t * buffer2 = new item_t[bufferItems];
+		memcpy(buffer2, buffer, sizeof(item_t)*bufferItems);
+		delete[] buffer;
+		buffer = buffer2;
+		bufferSize = bufferItems;
+	}
+
 	inline void sortRun() {
 		std::sort(buffer, buffer+bufferItems, m_comp);
 	}
 
 	void flush() {
+		std::cout << "Flushing " << bufferItems << " items to disk" << std::endl;
 		sortRun();
 		file_stream<item_t> stream(m_blockFactor);
 		stream.open(name(nextFile));
@@ -94,10 +106,8 @@ public:
 		++nextFile;
 	}
 
-
-	inline memory_size_type calculateHighArity() const {
-		//return memory_fits< pull_stream_source< ami::stream<item_type> > >::fits(MM_manager.memory_available() - baseMinMem());
-		return 2;
+	inline memory_size_type calculateArity(memory_size_type memory) const {
+		return memory / (file_stream<item_t>::memory_usage(m_blockFactor) + MM_manager.space_overhead());
 	}
 
 	inline file_stream<item_t> * create_stream() {
@@ -159,11 +169,6 @@ private:
 					  sort< dest_t, comp_t> > parent_t;
 public:
 	sort(dest_t & dest, comp_t comp=comp_t(), double blockFactor=1.0): parent_t(dest, comp, blockFactor) {}
-
-	inline memory_size_type mergeArity() {
-		return 2;
-		//memory_fits<pull_stream_source< ami::stream<item_type> > >::fits(memoryOut() - baseMinMem());
-	}
 
 	inline void pushBuffer() {
 		typename dest_t::item_type * end = parent_t::buffer+ parent_t::bufferItems;
