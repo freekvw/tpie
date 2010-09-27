@@ -16,8 +16,8 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with TPIE.  If not, see <http://www.gnu.org/licenses/>
-#ifndef _TPIE_STREAMING_SORT_H
-#define _TPIE_STREAMING_SORT_H
+#ifndef _TPIE_VAR_SORT_H
+#define _TPIE_VAR_SORT_H
 
 #include <algorithm>
 #include <iostream>
@@ -195,4 +195,4 @@ public:
 
 }
 }
-#endif //_TPIE_STREAMING_SORT_H
+#endif //_TPIE_VAR_SORT_H

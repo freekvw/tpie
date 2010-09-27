@@ -25,5 +25,6 @@
 #include <tpie/streaming/stream.h>
 #include <tpie/streaming/util.h>
 #include <tpie/streaming/virtual.h>
+#include <tpie/streaming/var_sort.h>
 
 #endif //_TPIE_STREAMING_H
