@@ -38,7 +38,7 @@ struct var_merger_strategy {
 	
 	var_merger_strategy(size_t maxsize): item(maxsize) {}
 
-	inline void store_item(qi_t & p, var_file_stream<item_t, size_extractor_t, fixed_allocator<item_t> > * stream) {
+	inline void store_item(qi_t &, var_file_stream<item_t, size_extractor_t, fixed_allocator<item_t> > * stream) {
 		item.swap(stream->allocator());
 	}
 	inline const item_t & fetch_item() {
@@ -147,7 +147,7 @@ public:
 	}
 
 	inline vfs_t * create_stream() {
-		return new vfs_t(m_extract, m_blockFactor);
+		return new vfs_t(m_extract, fixed_allocator<item_t>(maximumItemSize), m_blockFactor );
 	}
 
 	inline ms_t mergerStrategy() {return ms_t(maximumItemSize);}

@@ -39,6 +39,10 @@ public:
 	inline ~exponential_allocator() {
 		delete [] m_data;
 	}
+
+	exponential_allocator(const exponential_allocator & o): m_data(new char[o.m_size]), m_size(o.m_size) {
+		memcpy(m_data, o.m_data, m_size);
+	}
 	
 	T &allocate(memory_size_type size) {
 		if (size > m_size) {
@@ -66,8 +70,19 @@ template<typename T>
 class fixed_allocator {
 public:
 	fixed_allocator(memory_size_type size)
-		: m_data(new char[size]), m_size(size) {
+		: m_data(size?new char[size]:0), m_size(size) {
 	}
+
+	fixed_allocator(const fixed_allocator & o): m_data(o.m_size?new char[o.m_size]:0), m_size(o.m_size) {
+		memcpy(m_data, o.m_data, m_size);
+	}
+
+#ifdef __GXX_EXPERIMENTAL_CXX0X__
+	fixed_allocator(fixed_allocator && other): m_data(other.m_data), m_size(other.m_size) {
+		other.m_data = 0;
+		other.m_size = 0;
+	}
+#endif
 
 	inline ~fixed_allocator() {
 		delete [] m_data;

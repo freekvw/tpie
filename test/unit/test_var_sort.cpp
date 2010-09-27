@@ -89,6 +89,9 @@ int main() {
   
   item_t * item = (item_t*)new char[1024*1024];
 
+  sorter.set_memory_in(sorter.minimum_memory_in()+sizeof(int)*3);
+  sorter.set_memory_out(sorter.minimum_memory_out()+sizeof(int)*3);
+		
   sorter.begin();
   for(size_t i=0; strings[i]; ++i) {
     strcpy(item->str, strings[i]);
