@@ -196,7 +196,9 @@ public:
 		parent_t::flush();
 		delete[] parent_t::buffer;
 		parent_t::buffer=0;
-		memory_size_type arity = child().mergeArity();
+
+		memory_size_type avail = parent_t::memory_out();
+		memory_size_type arity = std::min(child().calculateArity(avail), available_files()-1);
 		parent_t::baseMerge(arity);
 	}
 	

@@ -150,11 +150,6 @@ public:
 	void reset_buffer_pointer() {curItem = 0;}
 	bool has_next_buffer_item() {return curItem != parent_t::bufferItems;}
 	item_t & next_buffer_item() {return parent_t::buffer[curItem++];}
-
-	inline memory_size_type mergeArity() {
-		return 2;
-		//memory_size_type arity = memory_fits< pull_stream_source< ami::stream<item_type> > >::fits(memoryOut() - baseMinMem());
-	}
 };
 
 
