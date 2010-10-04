@@ -85,7 +85,9 @@ bool basic_test() {
 		"Thomas E. Kurtz", 0};
 
 	string_sink sink;
-	var_sort<string_sink, size_t_size_extractor_t, comp_t> sorter(sink);
+	comp_t comp;
+	size_t_size_extractor_t size_extractor;
+	var_sort<string_sink, size_t_size_extractor_t, comp_t> sorter(sink, size_extractor, comp);
   
 	item_t * item = (item_t*)new char[1024*1024];
 	std::vector<std::string> items;

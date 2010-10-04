@@ -52,7 +52,7 @@ private:
 public:
 	typedef file_stream_t file_stream_type;
 
-	sort_base_crtp(comp_t comp=comp_t(), double blockFactor=1.0):
+	sort_base_crtp(comp_t comp, double blockFactor=1.0):
 		m_comp(comp), m_blockFactor(blockFactor) {
 		fileBase = tempname::tpie_name("ssort");
 	}

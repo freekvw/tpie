@@ -64,7 +64,6 @@ protected:
 	memory_size_type bufferBytes;
 	memory_size_type maximumItemSize;
 	stream_size_type size; //Number of items
-	comp_t comp;
 
 	size_extractor_t m_extract;
 
@@ -74,7 +73,7 @@ protected:
 		inline bool operator()(memory_size_type ia, memory_size_type ib) const {
 			const item_t & a = *reinterpret_cast<item_t*>(vsb.buffer + ia);
 			const item_t & b = *reinterpret_cast<item_t*>(vsb.buffer + ib);
-			return vsb.comp(a,b);
+			return vsb.m_comp(a,b);
 		};
 	};
 
@@ -102,7 +101,7 @@ protected:
 	using parent_t::nextFile;
 	using parent_t::m_comp;
 public:
-	var_sort_base(comp_t comp=comp_t(), double blockFactor=1.0): parent_t(comp, blockFactor) {
+	var_sort_base(comp_t comp, double blockFactor=1.0): parent_t(comp, blockFactor) {
 		bufferSize = 0;
 	};
 
@@ -148,8 +147,7 @@ public:
 	}
 	
 	inline void push(const item_t & item) {
-		size_extractor_t e;
-		memory_size_type itemSize = e.size(*reinterpret_cast<const typename size_extractor_t::header_t*>(&item));
+		memory_size_type itemSize = m_extract.size(*reinterpret_cast<const typename size_extractor_t::header_t*>(&item));
 		maximumItemSize = std::max(maximumItemSize, itemSize);
 		if ( (bufferItems+1) * sizeof(memory_size_type) + bufferBytes + itemSize > bufferSize)  {
 			flush();
@@ -185,13 +183,19 @@ private:
 										  end_data_t, pull_begin_data_t, pull_end_data_t> > parent_t;
 	memory_size_type * curItem;
 public:
-	var_pull_sort(comp_t comp=comp_t(), double blockFactor=1.0): parent_t(comp, blockFactor) {}
+	var_pull_sort(size_extractor_t size_extractor, comp_t comp=comp_t(), double blockFactor=1.0): parent_t(comp, blockFactor) {
+		parent_t::m_extract = size_extractor;
+	}
 	
-	inline void reset_buffer_pointer() {curItem = parent_t::index_begin();}
+	inline void reset_buffer_pointer() {
+		curItem = parent_t::index_begin();
+	}
 	inline bool has_next_buffer_item() {return curItem != parent_t::index_end();}
-	inline item_t & next_buffer_item() {return *reinterpret_cast<item_t*>(parent_t::buffer+*curItem);}
+	inline const item_t & next_buffer_item() {
+		return *reinterpret_cast<item_t*>(parent_t::buffer + *(curItem++));
+	}
 };
-	
+
 template <class dest_t,
 		  class size_extractor_t,
 		  class comp_t=std::less<typename dest_t::item_type>
@@ -207,7 +211,11 @@ private:
 					  var_sort<dest_t, size_extractor_t, comp_t> > parent_t;
 public:
 	typedef typename dest_t::item_type item_type;
-	var_sort(dest_t & dest, comp_t comp=comp_t(), double blockFactor=1.0): parent_t(dest, comp, blockFactor) {}
+	var_sort(dest_t & dest, size_extractor_t size_extractor, comp_t comp=comp_t(), double blockFactor=1.0)
+		: parent_t(dest, comp, blockFactor) {
+		parent_t::m_extract = size_extractor;
+	}
+
 
 	inline void pushBuffer() {
 		for(memory_size_type * i=parent_t::index_begin(); i != parent_t::index_end(); ++i) 
