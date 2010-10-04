@@ -167,7 +167,31 @@ public:
 	inline ms_t mergerStrategy() {return ms_t(maximumItemSize);}
 };
 
-
+template <typename item_t,
+		  class size_extractor_t,
+		  class comp_t=std::less<item_t>,
+		  typename begin_data_t=empty_type,
+		  typename end_data_t=empty_type,
+		  typename pull_begin_data_t=empty_type,
+		  typename pull_end_data_t=empty_type >
+class var_pull_sort: public pull_sort_crtp< end_data_t, pull_begin_data_t, pull_end_data_t,
+											var_sort_base<item_t, comp_t, size_extractor_t, begin_data_t>,
+											var_pull_sort<item_t, size_extractor_t, comp_t, begin_data_t,
+														  end_data_t, pull_begin_data_t, pull_end_data_t> > {
+private:
+	typedef pull_sort_crtp< end_data_t, pull_begin_data_t, pull_end_data_t,
+							var_sort_base<item_t, comp_t, size_extractor_t, begin_data_t>,
+							var_pull_sort<item_t, size_extractor_t, comp_t, begin_data_t,
+										  end_data_t, pull_begin_data_t, pull_end_data_t> > parent_t;
+	memory_size_type * curItem;
+public:
+	var_pull_sort(comp_t comp=comp_t(), double blockFactor=1.0): parent_t(comp, blockFactor) {}
+	
+	inline void reset_buffer_pointer() {curItem = parent_t::index_begin();}
+	inline bool has_next_buffer_item() {return curItem != parent_t::index_end();}
+	inline item_t & next_buffer_item() {return *reinterpret_cast<item_t*>(parent_t::buffer+*curItem);}
+};
+	
 template <class dest_t,
 		  class size_extractor_t,
 		  class comp_t=std::less<typename dest_t::item_type>
